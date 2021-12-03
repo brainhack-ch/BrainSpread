@@ -1,5 +1,7 @@
 ''' Utilities funciton for visualizaiton purposes. '''
 
+import os
+
 import matplotlib.pyplot as plt
 
 def visualize_NIfTI_data(data, depths, time_idx=None):
@@ -21,13 +23,13 @@ def visualize_NIfTI_data(data, depths, time_idx=None):
     plt.tight_layout()
     plt.show()
     
-def visualize_diffusion_timeplot(matrix, save_path=None):
+def visualize_diffusion_timeplot(matrix, save_dir=None):
     plt.figure(figsize=(15,3))
     plt.imshow(matrix.T) #, interpolation='nearest'
     plt.xlabel('Iteration' )
     plt.ylabel('ROIs')
     plt.colorbar()
     plt.tight_layout()
-    if save_path is not None:
-        plt.savefig(save_path)
+    if save_dir is not None:
+        plt.savefig(os.path.join(save_dir, 'diffusion_over_time.png'))
     plt.show() 

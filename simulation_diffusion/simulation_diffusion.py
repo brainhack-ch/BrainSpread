@@ -75,33 +75,31 @@ class DiffusionSimulation:
             matrix = matrix[::factor, :] # downsampling
         return matrix
     
-    def save_matrix(self, path):
-        np.savetxt(path, self.diffusion_final, delimiter=",")
+    def save_matrix(self, save_dir):
+        np.savetxt(os.path.join(save_dir, 'diffusion_matrix_over_time.csv'), 
+                                self.diffusion_final, delimiter=",")
  
 def load_connectivity_matrix(path):
     data = np.genfromtxt(path, delimiter=",")
     return data
 
-def runPath(data_path_p, output_path_p):
-    data_path = '../output/sub-AD4009/connect_matrix_rough.csv'
-
-    output_path = '../output/sub-AD4009/diffusion_matrix.csv'
+def run_simulation(subject_path):    
+    ''' Run simulation for single patient. '''
     
-    connect_matrix = load_connectivity_matrix(data_path_p)
+    connectivity_matrix_path = os.path.join(subject_path, 'connect_matrix_rough.csv')
+    
+    connect_matrix = load_connectivity_matrix(connectivity_matrix_path)
     simulation = DiffusionSimulation(connect_matrix)
     simulation.run()
-    simulation.save_matrix(output_path_p)
-    visualize_diffusion_timeplot(simulation.diffusion_final)
-    return simulation.diffusion_final
+    simulation.save_matrix(subject_path)
+    visualize_diffusion_timeplot(simulation.diffusion_final, save_dir=subject_path)
 
 def main():
-    patients = ['sub-AD4009', 'sub-AD4215', 'sub-AD4500', 'sub-AD4892', 'sub-AD6264']
-    i = 0
-    diffusionMatrixes = np.zeros(5,1001,116).reshape((5,1001, 116))
-    for p in patients:
-        diffusionMatrixes[i] = runPath('../output/'+ p +'/connect_matrix_rough.csv', '../output/'+ p+'/diffusion_matrix.csv')
-        i += 1
-    
+    connectomes_dir = '../data/output'
+    for subject in os.listdir(connectomes_dir):
+        print(f'Simulation for subject: {subject}')
+        subject_path = os.path.join(connectomes_dir, subject)
+        run_simulation(subject_path)
     
 if __name__ == '__main__':
     main()
