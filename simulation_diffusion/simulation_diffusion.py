@@ -6,6 +6,7 @@ Ashish Raj, Amy Kuceyeski, Michael Weiner,
 '''
 
 import os
+import logging
 
 from tqdm import tqdm 
 import numpy as np
@@ -13,35 +14,46 @@ from scipy.sparse.csgraph import laplacian as scipy_laplacian
 
 from utils_vis import visualize_diffusion_timeplot
 
+logging.basicConfig(level=logging.INFO)
+
 class DiffusionSimulation:
-    def __init__(self, connect_matrix):
+    def __init__(self, connect_matrix, concentrations=None):
+        ''' If concentration is not None: use PET data as the initial concentration of the proteins. 
+        Otherwise: manually choose initial seeds and concentrations. '''
+        
         self.beta = 1.5 # As in the Raj et al. papers
-
-        #TODO: change init concentration with pet data
-        self.init_concentration = 1 # initial concentration of misfolded proteins in the seeds
-
         self.iterations = int(1e3) #1000
         self.rois = 116 # AAL atlas has 116 rois
         self.tstar = 10.0 # total length of the simulation
         self.timestep = self.tstar / self.iterations
         self.cm = connect_matrix
+        if concentrations is not None: 
+            logging.info(f'Loading concentration from PET files.')
+            self.diffusion_init = concentrations
+        else:
+            logging.info(f'Loading concentration manually.')
+            self.diffusion_init = self.define_seeds()
         
     def run(self, inverse_log=True, downsample=True):
         ''' Run simulation. '''
         if inverse_log: self.calc_exponent()
-        self.define_seeds()
         self.calc_laplacian()
         self.diffusion_final = self.iterate_spreading()
         if downsample: 
             self.diffusion_final = self.downsample_matrix(self.diffusion_final)
         
-    def define_seeds(self):
-        ''' Define Alzheimer seed regions manually. '''
+    def define_seeds(self, init_concentration=1):
+        ''' Define Alzheimer seed regions manually. 
+        
+        Args:
+            init_concentration (int): initial concentration of misfolded proteins in the seeds. '''
+            
         # Store initial misfolded proteins
-        self.diffusion_init = np.zeros(self.rois)
+        diffusion_init = np.zeros(self.rois)
         # Seed regions for Alzheimer (according to AAL atlas): 31, 32, 35, 36 (TODO: confirm)
         # assign initial concentration of proteins in this region
-        self.diffusion_init[[31, 32, 35, 36]] = self.init_concentration
+        diffusion_init[[31, 32, 35, 36]] = init_concentration
+        return diffusion_init
         
     def calc_laplacian(self):
         # normed laplacian 
@@ -79,7 +91,7 @@ class DiffusionSimulation:
         np.savetxt(os.path.join(save_dir, 'diffusion_matrix_over_time.csv'), 
                                 self.diffusion_final, delimiter=",")
  
-def load_connectivity_matrix(path):
+def load_matrix(path):
     data = np.genfromtxt(path, delimiter=",")
     return data
 
@@ -87,9 +99,14 @@ def run_simulation(subject_path):
     ''' Run simulation for single patient. '''
     
     connectivity_matrix_path = os.path.join(subject_path, 'connect_matrix_rough.csv')
+    concentration_path = os.path.join(subject_path, 'nodeIntensities.csv')
     
-    connect_matrix = load_connectivity_matrix(connectivity_matrix_path)
-    simulation = DiffusionSimulation(connect_matrix)
+    # load connectome
+    connect_matrix = load_matrix(connectivity_matrix_path)
+    # load proteins concentration in brian regions
+    concentrations = load_matrix(concentration_path) 
+        
+    simulation = DiffusionSimulation(connect_matrix, concentrations)
     simulation.run()
     simulation.save_matrix(subject_path)
     visualize_diffusion_timeplot(simulation.diffusion_final, save_dir=subject_path)
@@ -97,7 +114,7 @@ def run_simulation(subject_path):
 def main():
     connectomes_dir = '../data/output'
     for subject in os.listdir(connectomes_dir):
-        print(f'Simulation for subject: {subject}')
+        logging.info(f'Simulation for subject: {subject}')
         subject_path = os.path.join(connectomes_dir, subject)
         run_simulation(subject_path)
     
