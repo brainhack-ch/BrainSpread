@@ -24,7 +24,7 @@ class DiffusionSimulation:
         self.beta = 1.5 # As in the Raj et al. papers
         self.iterations = int(1e3) #1000
         self.rois = 116 # AAL atlas has 116 rois
-        self.tstar = 10.0 # total length of the simulation
+        self.tstar = 2.0 # total length of the simulation
         self.timestep = self.tstar / self.iterations
         self.cm = connect_matrix
         if concentrations is not None: 
@@ -100,18 +100,22 @@ def load_matrix(path):
     data = np.genfromtxt(path, delimiter=",")
     return data
 
-def run_simulation(subject_path):    
+def run_simulation(connectomes_dir, node_intensity_dir, subject):    
     ''' Run simulation for single patient. '''
     
+    subject_path = os.path.join(connectomes_dir, subject)      
+    
     connectivity_matrix_path = os.path.join(subject_path, 'connect_matrix_rough.csv')
-    concentration_path = os.path.join(subject_path, 'nodeIntensities.csv')
+    t0_concentration_path = os.path.join(node_intensity_dir, f'nodeIntensities_{subject}t0.csv')
+    t1_concentration_path = os.path.join(node_intensity_dir, f'nodeIntensities_{subject}t1.csv')
     
     # load connectome
     connect_matrix = load_matrix(connectivity_matrix_path)
     # load proteins concentration in brian regions
-    concentrations = load_matrix(concentration_path) 
-        
-    simulation = DiffusionSimulation(connect_matrix, concentrations)
+    t0_concentration = load_matrix(t0_concentration_path) 
+    t1_concentration = load_matrix(t1_concentration_path)
+            
+    simulation = DiffusionSimulation(connect_matrix, t0_concentration)
     simulation.run()
     simulation.save_diffusion_matrix(subject_path)
     simulation.save_terminal_concentration(subject_path)
@@ -119,10 +123,12 @@ def run_simulation(subject_path):
 
 def main():
     connectomes_dir = '../data/output'
-    for subject in os.listdir(connectomes_dir):
+    node_intensity_dir = '../data/node_intensity_data'
+    
+    patients = ['sub-AD4215', 'sub-AD4500', 'sub-AD6264']
+    for subject in patients:
         logging.info(f'Simulation for subject: {subject}')
-        subject_path = os.path.join(connectomes_dir, subject)
-        run_simulation(subject_path)
+        run_simulation(connectomes_dir, node_intensity_dir, subject)
     
 if __name__ == '__main__':
     main()
