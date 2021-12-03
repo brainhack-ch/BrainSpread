@@ -87,9 +87,14 @@ class DiffusionSimulation:
             matrix = matrix[::factor, :] # downsampling
         return matrix
     
-    def save_matrix(self, save_dir):
+    def save_diffusion_matrix(self, save_dir):
         np.savetxt(os.path.join(save_dir, 'diffusion_matrix_over_time.csv'), 
                                 self.diffusion_final, delimiter=",")
+    
+    def save_terminal_concentration(self, save_dir):
+        np.savetxt(os.path.join(save_dir, 'terminal_concentration.csv'),
+                   self.diffusion_final[-1, :], delimiter=',')
+        
  
 def load_matrix(path):
     data = np.genfromtxt(path, delimiter=",")
@@ -108,7 +113,8 @@ def run_simulation(subject_path):
         
     simulation = DiffusionSimulation(connect_matrix, concentrations)
     simulation.run()
-    simulation.save_matrix(subject_path)
+    simulation.save_diffusion_matrix(subject_path)
+    simulation.save_terminal_concentration(subject_path)
     visualize_diffusion_timeplot(simulation.diffusion_final, save_dir=subject_path)
 
 def main():
