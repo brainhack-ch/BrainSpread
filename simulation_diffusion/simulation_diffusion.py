@@ -97,7 +97,7 @@ def runPath(data_path_p, output_path_p):
 def main():
     patients = ['sub-AD4009', 'sub-AD4215', 'sub-AD4500', 'sub-AD4892', 'sub-AD6264']
     i = 0
-    diffusionMatrixes = np.zeros(1001*5*116).reshape((5,1001, 116))
+    diffusionMatrixes = np.zeros(5,1001,116).reshape((5,1001, 116))
     for p in patients:
         diffusionMatrixes[i] = runPath('../output/'+ p +'/connect_matrix_rough.csv', '../output/'+ p+'/diffusion_matrix.csv')
         i += 1
