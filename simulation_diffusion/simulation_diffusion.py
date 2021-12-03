@@ -16,7 +16,10 @@ from utils_vis import visualize_diffusion_timeplot
 class DiffusionSimulation:
     def __init__(self, connect_matrix):
         self.beta = 1.5 # As in the Raj et al. papers
+
+        #TODO: change init concentration with pet data
         self.init_concentration = 1 # initial concentration of misfolded proteins in the seeds
+
         self.iterations = int(1e3) #1000
         self.rois = 116 # AAL atlas has 116 rois
         self.tstar = 10.0 # total length of the simulation
@@ -79,16 +82,26 @@ def load_connectivity_matrix(path):
     data = np.genfromtxt(path, delimiter=",")
     return data
 
-def main():
-    data_path = '../data/output/sub-AD4009/connect_matrix_rough.csv'
-    output_path = '../data/output/sub-AD4009/diffusion_matrix.csv'
+def runPath(data_path_p, output_path_p):
+    data_path = '../output/sub-AD4009/connect_matrix_rough.csv'
+
+    output_path = '../output/sub-AD4009/diffusion_matrix.csv'
     
-    connect_matrix = load_connectivity_matrix(data_path)
+    connect_matrix = load_connectivity_matrix(data_path_p)
     simulation = DiffusionSimulation(connect_matrix)
     simulation.run()
-    simulation.save_matrix(output_path)
-    
+    simulation.save_matrix(output_path_p)
     visualize_diffusion_timeplot(simulation.diffusion_final)
+    return simulation.diffusion_final
+
+def main():
+    patients = ['sub-AD4009', 'sub-AD4215', 'sub-AD4500', 'sub-AD4892', 'sub-AD6264']
+    i = 0
+    diffusionMatrixes = np.zeros(5,1001,116).reshape((5,1001, 116))
+    for p in patients:
+        diffusionMatrixes[i] = runPath('../output/'+ p +'/connect_matrix_rough.csv', '../output/'+ p+'/diffusion_matrix.csv')
+        i += 1
+    
     
 if __name__ == '__main__':
     main()
