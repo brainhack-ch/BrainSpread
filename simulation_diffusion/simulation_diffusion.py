@@ -24,7 +24,7 @@ class DiffusionSimulation:
         self.beta = 1.5 # As in the Raj et al. papers
         self.iterations = int(1e3) #1000
         self.rois = 116 # AAL atlas has 116 rois
-        self.tstar = 2.0 # total length of the simulation
+        self.tstar = 10.0 # total length of the simulation in years
         self.timestep = self.tstar / self.iterations
         self.cm = connect_matrix
         if concentrations is not None: 
@@ -92,14 +92,21 @@ class DiffusionSimulation:
                                 self.diffusion_final, delimiter=",")
     
     def save_terminal_concentration(self, save_dir):
+        ''' Save last (terminal) concentration. '''
         np.savetxt(os.path.join(save_dir, 'terminal_concentration.csv'),
                    self.diffusion_final[-1, :], delimiter=',')
-        
+               
  
 def load_matrix(path):
     data = np.genfromtxt(path, delimiter=",")
     return data
 
+def compare_results(output, target):
+    ''' Compare output from simulation with 
+    the target data extracted from PET using MSE metric. '''
+    MSE = np.sum((output - target)**2) / len(output)
+    return MSE 
+    
 def run_simulation(connectomes_dir, node_intensity_dir, subject):    
     ''' Run simulation for single patient. '''
     
@@ -119,7 +126,12 @@ def run_simulation(connectomes_dir, node_intensity_dir, subject):
     simulation.run()
     simulation.save_diffusion_matrix(subject_path)
     simulation.save_terminal_concentration(subject_path)
-    visualize_diffusion_timeplot(simulation.diffusion_final, save_dir=subject_path)
+    visualize_diffusion_timeplot(simulation.diffusion_final, 
+                                 simulation.timestep,
+                                 simulation.tstar,
+                                 save_dir=subject_path)
+    mse = compare_results(simulation.diffusion_final[-1], t1_concentration)
+    logging.info(f'MSE for subject {subject} is: {mse:.4f}')
 
 def main():
     connectomes_dir = '../data/output'
