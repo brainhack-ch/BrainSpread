@@ -176,10 +176,14 @@ class EMS_Simulation:
         plt.colorbar()
         return plt.show()
 
-    def plot_predicted_vs_real(self, predicted, real):
+    def plot_predicted_vs_real(self, predicted, real, year, error):
         x_axis = np.arange(116)
         plt.plot(x_axis, predicted, label='predicted', c = 'r')
         plt.plot(x_axis, real, label='real', c = 'g')
+        plt.grid()
+        plt.xlabel('ROI')
+        plt.ylabel('concentrations')
+        plt.title(f'After {year} years, error: {error:.2f}')
         plt.legend()
         plt.show()
 
@@ -187,9 +191,9 @@ class EMS_Simulation:
     def run_simulation(subject_path, subject):
         connectivity_matrix_path = os.path.join(subject_path, 'connect_matrix_rough.csv')
         concentration_path = os.path.join(subject_path, 'nodeIntensities-not-normalized-t0.csv')
-        # real_concentration_path = os.path.join(subject_path, 'nodeIntensities-not-normalized-t2.csv')
-        real_concentration_path = os.path.join(subject_path, 'nodeIntensities-not-normalized-t1.csv')
-        years = 1
+        real_concentration_path = os.path.join(subject_path, 'nodeIntensities-not-normalized-t2.csv')
+        #real_concentration_path = os.path.join(subject_path, 'nodeIntensities-not-normalized-t1.csv')
+        years = 2
 
         # load connectome
         connectivity_matrix = load_matrix(connectivity_matrix_path)
@@ -219,10 +223,8 @@ class EMS_Simulation:
 
         # predicted vs real plot
         predicted = Rmis_all[:, years-1]
-        simulation.plot_predicted_vs_real(predicted, real_concentration)
+        simulation.plot_predicted_vs_real(predicted, real_concentration, years, np.sqrt(mean_squared_error(real_concentration, predicted)))
 
-        # print error
-        print(f'RMSE: {np.sqrt(mean_squared_error(real_concentration, predicted))}')
         for t in range(simulation.T_total):
             Y = Pmis_all[:, :, t]
         
