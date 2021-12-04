@@ -3,6 +3,7 @@
 import os
 
 import matplotlib.pyplot as plt
+import numpy as np
 
 def visualize_NIfTI_data(data, depths, time_idx=None):
     ''' Visualize provided depths from NIfTI data at the specific time. 
@@ -23,12 +24,16 @@ def visualize_NIfTI_data(data, depths, time_idx=None):
     plt.tight_layout()
     plt.show()
     
-def visualize_diffusion_timeplot(matrix, save_dir=None):
+def visualize_diffusion_timeplot(matrix, timestep, total_time, save_dir=None):
     plt.figure(figsize=(15,3))
     plt.imshow(matrix.T) #, interpolation='nearest'
-    plt.xlabel('Iteration' )
+    plt.xlabel('# iterations')
+    # TODO: change xticks and labels to time in years
+    # plt.xticks(np.arange(0, total_time, step=timestep), labels=np.arange(0, total_time, step=timestep))
+    # plt.xlabel('Time [years]' )
     plt.ylabel('ROIs')
     plt.colorbar()
+    plt.title(f'Total time of simulation: {total_time} years')
     plt.tight_layout()
     if save_dir is not None:
         plt.savefig(os.path.join(save_dir, 'diffusion_over_time.png'))
